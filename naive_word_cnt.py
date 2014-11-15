@@ -1,41 +1,42 @@
-stops = open("http://www.textfixer.com/resources/common-english-words.txt", 'r')
+#read stop words into list
+stops = open(r'common-english-words.txt', 'r')
 stopwords = stops.read().split(",")
 stops.close()
 
-text_train = open(r'C:\Users\Harry\Documents\Fall 14\Stat 154\train_msgs.txt', encoding='utf-8')
-
+#create list of dictionaries with 0-1 freq of each word in text
+text_train = open("train_msgs.txt", encoding='utf-8')
 label = []
 allwords = set()
 wordsbytext = []
 for line in text_train:
 	tabsplit = line.split("\t")
-	label.append(tabsplit[0])
-	words = tabsplit[1][:-1].split()
-	wordsbytext.append({});
+	words = [w for w in tabsplit[1][:-1].split() if w not in stopwords]
 	textlen = len(words)
-	for w in words:
-		if w not in stopwords:
+	if textlen > 0:
+		label.append(tabsplit[0])
+		wordsbytext.append({});
+		for w in words:
 			allwords.add(w)
 			if w in wordsbytext[-1]:
 				wordsbytext[-1][w] += 1/textlen
 			else:
 				wordsbytext[-1][w] = 1/textlen
-	if wordsbytext[-1] == {}:
-		wordsbytext.pop()
 
+#create freq data matrix with unique words as columns, texts as rows
 allwords = list(allwords)
 countmat = []
 for text in wordsbytext:
 	countmat.append([])
 	for word in allwords:
-		if word not in text:
-			countmat[-1].append(0)
-		else:
+		if word in text:
 			countmat[-1].append(text[word])
+		else:
+			countmat[-1].append(0)
 
+#write to csv
+raw_out = open(r'raw_mtx.csv', 'w')
+raw_out.write(str(allwords)[1:-1] + "\n")
+for row in countmat:
+	raw_out.write(str(row)[1:-1] + "\n")
 
-import csv
-
-with open("raw_mtx.csv", "wb") as f:
-    writer = csv.writer(f)
-    writer.writerows(countmat)
+raw_out.close()
