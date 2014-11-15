@@ -1,0 +1,11 @@
+f = open('raw_mtx.csv')
+words = f.readline()
+print("first 100 char of words: " + str(words[:100]))
+test = f.readline()
+print("len line 1: " + str(len(test)))
+test2 = f.readline()
+print("len line 2: " + str(len(test2)))
+test = test.split(",")
+test = [float(t) for t in test]
+print("first 10 el of line 1: " + str(test[:10]))
+print("sum of line 1: " + str(sum(test)))
