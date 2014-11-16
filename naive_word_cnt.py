@@ -32,10 +32,12 @@ for text in wordsbytext:
 			countmat[-1].append(text[word])
 		else:
 			countmat[-1].append(0)
+	countmat[-1].append(label[0]);
+	label = label[1:]
 
 #write to csv
 raw_out = open(r'raw_mtx.csv', 'w')
-raw_out.write(str(allwords)[1:-1] + "\n")
+raw_out.write(str(allwords)[1:-1] + ", 'label'"+ "\n")
 for row in countmat:
 	raw_out.write(str(row)[1:-1] + "\n")
 
