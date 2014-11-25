@@ -47,8 +47,8 @@ cross.val.confusion.mtx = function(feature.mtx, cost, k = 5) {
   fold[feature.mtx$class == "ham"] = get.fold.vect(k, feature.mtx[feature.mtx$class == "ham", ])
   fold[feature.mtx$class == "spam"] = get.fold.vect(k, feature.mtx[feature.mtx$class == "spam",])
   
-  predy = as.factor(sapply(1:k, function(x) assess.SVM(feature.mtx, cost, which(fold != x))))
-  y = as.factor(sapply(1:k, function(x) feature.mtx$class[fold == x]))
+  predy = as.factor(unlist(sapply(1:k, function(x) assess.SVM(feature.mtx, cost, which(fold != x)))))
+  y = as.factor(unlist(sapply(1:k, function(x) feature.mtx$class[fold == x])))
   return(table(predy, y))
 }
 
