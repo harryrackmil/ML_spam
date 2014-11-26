@@ -28,7 +28,7 @@ words.by.freq = function(mtx, freq, n = 20) {
 assess.SVM = function(dat, cost, trainind) {
   # Used to filter out zero columns to allow scaling
   isNonconstant = apply(dat[trainind, 1:(length(dat) - 1)], 2, function(x) sum(x) > 0)
-  mod = svm(class ~ ., data = dat[isNonconstant], cost = cost, subset = trainind, kernel = "linear")
+  mod = svm(classification ~ ., data = dat[isNonconstant], cost = cost, subset = trainind, kernel = "linear")
   predy = predict(mod, dat[-trainind,], type = "Classification")
   return(predy)
 }
@@ -44,12 +44,27 @@ get.fold.vect = function(k, mtx) {
 cross.val.confusion.mtx = function(feature.mtx, cost, k = 5) {
   # This partition keeps proportions of ham and spam in each fold similar
   fold = rep(0, nrow(feature.mtx))
-  fold[feature.mtx$class == "ham"] = get.fold.vect(k, feature.mtx[feature.mtx$class == "ham", ])
-  fold[feature.mtx$class == "spam"] = get.fold.vect(k, feature.mtx[feature.mtx$class == "spam",])
+  fold[feature.mtx$classification == "ham"] = get.fold.vect(k, feature.mtx[feature.mtx$classification == "ham", ])
+  fold[feature.mtx$classification == "spam"] = get.fold.vect(k, feature.mtx[feature.mtx$classification == "spam",])
   
+  thismodtime = proc.time()
+  print(paste("Training", k, "SVM models with cost", cost,"...", sep = " "))
   predy = as.factor(unlist(sapply(1:k, function(x) assess.SVM(feature.mtx, cost, which(fold != x)))))
-  y = as.factor(unlist(sapply(1:k, function(x) feature.mtx$class[fold == x])))
+  y = as.factor(unlist(sapply(1:k, function(x) feature.mtx$classification[fold == x])))
+  tab = table(predy, y)
+  print("Finished.")
+  print(proc.time() - thismodtime)
+  
+  print(tab)
+  print(paste("Accuracy:", acc(tab), sep = " "))
+  print(paste("ppv:", ppv(tab), sep = " "))
+  print(paste("npv:", npv(tab), sep = " "))
   return(table(predy, y))
+}
+
+# Returns a list of confusion matrices for a range of cost values
+tune.confusion.mtx = function(feature.mtx, costrange, k = 5) {
+  return(lapply(costrange, function(cost) cross.val.confusion.mtx(filt.word.mtx, cost, k)))
 }
 
 # Calculates overall accuracy from confusion matrix TAB.
@@ -73,7 +88,7 @@ npv = function(tab) {
 ### Read and format training for:
 ### WORD MATRIX
 word.mtx = read.csv(word.path)
-names(word.mtx)[length(word.mtx)] = "class"
+names(word.mtx)[length(word.mtx)] = "classification"
 
 ### POWER MATRIX
 #power.mtx = read.csv(power.path)
@@ -106,7 +121,7 @@ filt.word.mtx = filterByCount(word.mtx, textsPerWord, 5, 500)
 ### tune cost for linear svm with cross-validation
 
 
-confusions = lapply(10 ^ (-5:4), function(cost) cross.val.confusion.mtx(filt.word.mtx, cost))
+confusions = tune.confusion.mtx(filt.word.mtx, 10 ^ (-4:4))
 proc.time() -  start
 par(mfrow = c(3, 1))
 plot(-4:4, sapply(confusions, acc), main = "Overall Accuracy", xlab = "log cost")
